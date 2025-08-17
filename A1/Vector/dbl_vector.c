@@ -5,14 +5,14 @@
 void dv_init( dbl_vector_t* vec ) {
     vec->capacity = DV_INITIAL_CAPACITY;
     vec->size = 0;
-    vec->data = malloc(sizeof(double) * DV_INITIAL_CAPACITY);
+    vec->data = malloc(DV_INITIAL_CAPACITY * sizeof(double));
     return;
 }
 
 void dv_ensure_capacity( dbl_vector_t* vec, size_t new_size ) {
     if(new_size > vec->capacity) {
         vec->capacity = new_size;
-        vec->data = realloc(vec->data, sizeof(double) * new_size);
+        vec->data = realloc(vec->data, new_size * sizeof(double));
     }
     return;
 }
