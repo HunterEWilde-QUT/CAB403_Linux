@@ -11,8 +11,10 @@ void dv_init( dbl_vector_t* vec ) {
 
 void dv_ensure_capacity( dbl_vector_t* vec, size_t new_size ) {
     if(new_size > vec->capacity) {
-        vec->capacity = new_size;
-        vec->data = realloc(vec->data, new_size * sizeof(double));
+        size_t new_capacity = vec->capacity * DV_GROWTH_FACTOR;         // Increase capacity by 25%
+        if(new_capacity < new_size) new_capacity = new_size;            // If 25% is insufficient, define exactly
+        vec->capacity = new_capacity;                                   // Set increased capacity
+        vec->data = realloc(vec->data, new_capacity * sizeof(double));  // Reallocated memory for increased capacity
     }
     return;
 }
