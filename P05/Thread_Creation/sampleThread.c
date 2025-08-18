@@ -37,8 +37,8 @@ int main(int argc, char *argv[]) {
     strcpy(data2.message, "Hi! Week 5 - Time flies by when programming in C");
 
 	/* initialize data to pass to thread 3 */
-	data3.thread_no = 3;
-	strcpy(data3.message, "I created a third thread.");
+	data3.thread_no = 20;
+	strcpy(data3.message, "Thread number 3 reports that the sum of the first 20 numbers is = ");
 
     /* create threads 1 and 2 
     *  function must take a parameter of void *(the second void *)
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 		printf("Error creating thread 2\n");
 		return EXIT_FAILURE;
 	}
-	if(pthread_create(&thread3, NULL, print_message_function, &data3) != 0) {
+	if(pthread_create(&thread3, NULL, sum_numbers, &data3) != 0) {
 		printf("Error creating thread 3\n");
 		return EXIT_FAILURE;
 	}
@@ -77,7 +77,7 @@ void *print_message_function(void *ptr) {
     data = ptr; /* type cast to a pointer to thdata */
 
     /* do the work */
-    for (int x = 0; x < MESSAGE_REPEAT; x++)  {
+    for (int x = 0; x < MESSAGE_REPEAT; x++) {
         printf("\n\nThread %d has the following message -->  %s \n", data->thread_no, data->message);
     }
     return NULL;
@@ -94,6 +94,6 @@ void *sum_numbers(void *ptr) {
 	for(int i = 0; i <= data->thread_no; i++) {
 		sum += i;
 	}
-	printf("Thread number 3 reports that the sum of the first 20 numbers is = %d", sum);
+	printf("%d\n", sum);
 	return NULL;
 }
