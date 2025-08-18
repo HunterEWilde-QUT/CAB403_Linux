@@ -10,9 +10,9 @@
 
 typedef struct message_queue {
     time_t buffer[BUFFER_SIZE];
-    int keep_running;
+    bool keep_running;
     int position;
-    int is_room;
+    bool is_room;
 } mq;
 
 /* function prototypes */
