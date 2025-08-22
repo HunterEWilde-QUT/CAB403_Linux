@@ -229,7 +229,9 @@ bool do_work( shared_memory_t* shm ) {
 
     // Update the value of local variable retVal and/or shm->data->result
     // as required.
-    // INSERT IMPLEMENTATION HERE
+    if(shm->data->operation == op_quit) {
+        retVal = false;
+    }
 
     // Do not alter the following instruction which send the result back to the
     // controller.
@@ -237,8 +239,10 @@ bool do_work( shared_memory_t* shm ) {
 
     // If retval is false, the memory needs to be unmapped, but that must be
     // done _after_ posting the semaphore. Un-map the shared data, and assign
-    // values to shm->data and shm-fd as noted above.
-    // INSERT IMPLEMENTATION HERE
+    // values to shm->data and shm->fd as noted above.
+    if(!retVal) {
+        destroy_shared_object(shm);
+    }
 
     // Keep this line to return the result.
     return retVal;
