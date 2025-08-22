@@ -145,6 +145,9 @@ void destroy_shared_object( shared_memory_t* shm ) {
 double request_work( shared_memory_t* shm, operation_t op, double lhs, double rhs ) {
     // Copy the supplied values of op, lhs and rhs into the corresponding fields
     // of the shared data object.
+    shm->data->operation = op;
+    shm->data->lhs = lhs;
+    shm->data->rhs = rhs;
 
     // Do not alter the following semaphore code. It sends the request to the
     // worker, and waits for the response in a reliable manner.
@@ -154,7 +157,7 @@ double request_work( shared_memory_t* shm, operation_t op, double lhs, double rh
     // Modify the following line to make the function return the result computed
     // by the worker process. This will be stored in the result field of the
     // shared data object.
-    return 0;
+    return shm->data->result;
 }
 
 /**
