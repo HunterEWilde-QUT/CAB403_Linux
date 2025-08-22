@@ -181,11 +181,17 @@ bool get_shared_object( shared_memory_t* shm, const char* share_name ) {
     // Get a file descriptor connected to shared memory object and save in
     // shm->fd. If the operation fails, ensure that shm->data is
     // NULL and return false.
-    shm_open(share_name, O_RDWR, 0);
+    shm->fd = shm_open(share_name, O_RDWR, 0);
+    if(shm->fd == -1) {
+        shm->data = NULL;
+        return false;
+    }
 
     // Otherwise, attempt to map the shared memory via mmap, and save the address
     // in shm->data. If mapping fails, return false.
-    // INSERT SOLUTION HERE
+    if(mmap(shm->data, sizeof(shared_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm->fd, 0) == MAP_FAILED) {
+        return false;
+    }
 
     // Modify the remaining stub only if necessary.
     return true;
