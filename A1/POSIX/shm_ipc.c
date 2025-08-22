@@ -66,7 +66,7 @@ bool create_shared_object( shared_memory_t* shm, const char* share_name ) {
     // Create the shared memory object, allowing read-write access by all users,
     // and saving the resulting file descriptor in shm->fd. If creation failed,
     // ensure that shm->data is NULL and return false.
-    shm->fd = shm_open(shm->name, O_RDWR, 0);
+    shm->fd = shm_open(shm->name, O_CREAT | O_EXCL | O_RDWR, 0); // may need different mode
     if(shm->fd == -1) {
         shm->data = NULL;
         return false;
@@ -181,7 +181,7 @@ bool get_shared_object( shared_memory_t* shm, const char* share_name ) {
     // Get a file descriptor connected to shared memory object and save in
     // shm->fd. If the operation fails, ensure that shm->data is
     // NULL and return false.
-    // INSERT SOLUTION HERE
+    shm_open(share_name, O_RDWR, 0);
 
     // Otherwise, attempt to map the shared memory via mmap, and save the address
     // in shm->data. If mapping fails, return false.
