@@ -61,3 +61,4 @@ dkms.conf
 /P05/Thread_Creation/thread
 /P05/Prod_Cons_Threads/pcthread
 /P05/Hashtable_Search/htsearch
+/.idea/codeStyles/codeStyleConfig.xml

@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "operations.h"
 
@@ -57,23 +58,37 @@ char* op_names[] = {
  */
 bool create_shared_object( shared_memory_t* shm, const char* share_name ) {
     // Remove any previous instance of the shared memory object, if it exists.
-    // INSERT SOLUTION HERE
+    shm_unlink(share_name);
 
     // Assign share name to shm->name.
-    // INSERT SOLUTION HERE
+    strcpy(shm->name, share_name);
 
     // Create the shared memory object, allowing read-write access by all users,
     // and saving the resulting file descriptor in shm->fd. If creation failed,
     // ensure that shm->data is NULL and return false.
-    // INSERT SOLUTION HERE
+    shm->fd = shm_open(shm->name, O_RDWR, 0);
+    if(shm->fd == -1) {
+        shm->data = NULL;
+        return false;
+    }
 
     // Set the capacity of the shared memory object via ftruncate. If the
     // operation fails, ensure that shm->data is NULL and return false.
-    // INSERT SOLUTION HERE
+    ftruncate(shm->fd, sizeof(shared_data_t));
+
+    struct stat *statbuf;
+    statbuf->st_size = sizeof(shared_data_t);
+
+    if(fstat(shm->fd, statbuf)) {
+        shm->data = NULL;
+        return false;
+    }
 
     // Otherwise, attempt to map the shared memory via mmap, and save the address
     // in shm->data. If mapping fails, return false.
-    // INSERT SOLUTION HERE
+    if(mmap(shm->data, sizeof(shared_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm->fd, 0) == MAP_FAILED) {
+        return false;
+    }
 
     // Do not alter the following semaphore initialisation code.
     sem_init( &shm->data->controller_semaphore, 1, 0 );
@@ -246,8 +261,7 @@ void controller_main() {
         printf( "Controller finished.\n" );
 
         destroy_shared_object( &shm );
-    }
-    else {
+    } else {
         printf( "Shared memory creation failed.\n" );
     }
 }
@@ -261,8 +275,7 @@ void worker_main() {
         while ( do_work( &shm ) ) {}
 
         printf( "Worker has been told to quit.\n" );
-    }
-    else {
+    } else {
         printf( "Shared memory connection failed.\n" );
     }
 }
@@ -273,20 +286,17 @@ int main() {
     // as childPid.
     childPid = fork();
 
-    if ( childPid < 0 ) { /* error occurred */
-        fprintf( stderr, "Fork failed\n" );
+    if (childPid < 0) { /* error occurred */
+        fprintf(stderr, "Fork failed\n");
         return 1;
-    }
-    else if ( childPid == 0 ) {
+    } else if (childPid == 0) {
         // Sleep 1 second to give the controller time to create the shared memory
         // object, then invoke worker_main.
         sleep( 1 );
         worker_main();
-    }
-    else { /* parent process */
+    } else { /* parent process */
         // Invoke controller_main.
         controller_main();
     }
-
     return 0;
 }
