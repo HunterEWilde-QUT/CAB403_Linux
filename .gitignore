@@ -64,3 +64,4 @@ dkms.conf
 /.idea/codeStyles/codeStyleConfig.xml
 /P06/Bounded_Buffer/bbuff
 /P06/PC_Semaphore/pcbuff
+/P06/PC_Conditional/pccond
