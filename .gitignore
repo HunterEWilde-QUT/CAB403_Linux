@@ -63,3 +63,4 @@ dkms.conf
 /P05/Hashtable_Search/htsearch
 /.idea/codeStyles/codeStyleConfig.xml
 /P06/Bounded_Buffer/bbuff
+/P06/PC_Semaphore/pcbuff
