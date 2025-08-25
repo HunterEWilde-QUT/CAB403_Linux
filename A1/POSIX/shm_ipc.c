@@ -66,7 +66,7 @@ bool create_shared_object( shared_memory_t* shm, const char* share_name ) {
     // Create the shared memory object, allowing read-write access by all users,
     // and saving the resulting file descriptor in shm->fd. If creation failed,
     // ensure that shm->data is NULL and return false.
-    shm->fd = shm_open(shm->name, O_CREAT | O_EXCL | O_RDWR, 0); // may need different mode
+    shm->fd = shm_open(shm->name, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR); // may need different mode
     if(shm->fd == -1) {
         shm->data = NULL;
         return false;
@@ -74,19 +74,15 @@ bool create_shared_object( shared_memory_t* shm, const char* share_name ) {
 
     // Set the capacity of the shared memory object via ftruncate. If the
     // operation fails, ensure that shm->data is NULL and return false.
-    ftruncate(shm->fd, sizeof(shared_data_t));
-
-    struct stat *statbuf;
-    statbuf->st_size = sizeof(shared_data_t);
-
-    if(fstat(shm->fd, statbuf)) {
+    if(ftruncate(shm->fd, sizeof(shared_data_t)) == -1) {
         shm->data = NULL;
         return false;
     }
 
     // Otherwise, attempt to map the shared memory via mmap, and save the address
     // in shm->data. If mapping fails, return false.
-    if(mmap(shm->data, sizeof(shared_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm->fd, 0) == MAP_FAILED) {
+    shm->data = mmap(shm->data, sizeof(shared_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm->fd, 0);
+    if(shm->data == MAP_FAILED) {
         return false;
     }
 
@@ -115,7 +111,7 @@ bool create_shared_object( shared_memory_t* shm, const char* share_name ) {
  */
 void destroy_shared_object( shared_memory_t* shm ) {
     // Remove the shared memory object.
-    munmap(shm, sizeof(shared_data_t));
+    munmap(shm->data, sizeof(shared_data_t));
     shm_unlink(shm->name);
     shm->fd = -1;
     shm->data = NULL;
@@ -189,7 +185,8 @@ bool get_shared_object( shared_memory_t* shm, const char* share_name ) {
 
     // Otherwise, attempt to map the shared memory via mmap, and save the address
     // in shm->data. If mapping fails, return false.
-    if(mmap(shm->data, sizeof(shared_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm->fd, 0) == MAP_FAILED) {
+    shm->data = mmap(shm->data, sizeof(shared_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm->fd, 0);
+    if(shm->data == MAP_FAILED) {
         return false;
     }
 
