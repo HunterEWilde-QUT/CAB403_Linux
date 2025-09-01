@@ -224,10 +224,29 @@ bool do_work( shared_memory_t* shm ) {
     // Do not alter the following instruction, which waits for work
     sem_wait( &shm->data->controller_semaphore );
 
-    // Update the value of local variable retVal and/or shm->data->result
-    // as required.
-    if(shm->data->operation == op_quit) {
-        retVal = false;
+    // Update the value of local variable retVal and/or shm->data->result as required.
+    double a = shm->data->lhs;
+    double b = shm->data->rhs;
+
+    switch(shm->data->operation) {
+        case op_quit:
+            retVal = false;
+            break;
+        case op_add:
+            shm->data->result = a + b;
+            break;
+        case op_sub:
+            shm->data->result = a - b;
+            break;
+        case op_mul:
+            shm->data->result = a * b;
+            break;
+        case op_div:
+            shm->data->result = a / b;
+            break;
+        default:
+            retVal = false;
+            break;
     }
 
     // Do not alter the following instruction which send the result back to the
