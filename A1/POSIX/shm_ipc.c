@@ -81,7 +81,7 @@ bool create_shared_object( shared_memory_t* shm, const char* share_name ) {
 
     // Otherwise, attempt to map the shared memory via mmap, and save the address
     // in shm->data. If mapping fails, return false.
-    shm->data = mmap(shm->data, sizeof(shared_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm->fd, 0);
+    shm->data = mmap(NULL, sizeof(shared_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm->fd, 0);
     if(shm->data == MAP_FAILED) {
         return false;
     }
@@ -185,7 +185,7 @@ bool get_shared_object( shared_memory_t* shm, const char* share_name ) {
 
     // Otherwise, attempt to map the shared memory via mmap, and save the address
     // in shm->data. If mapping fails, return false.
-    shm->data = mmap(shm->data, sizeof(shared_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm->fd, 0);
+    shm->data = mmap(NULL, sizeof(shared_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm->fd, 0);
     if(shm->data == MAP_FAILED) {
         return false;
     }
