@@ -257,7 +257,10 @@ bool do_work( shared_memory_t* shm ) {
     // done _after_ posting the semaphore. Un-map the shared data, and assign
     // values to shm->data and shm->fd as noted above.
     if(!retVal) {
-        destroy_shared_object(shm);
+        munmap(shm->data, sizeof(shared_data_t));
+        // Do not unlink.
+        shm->fd = -1;
+        shm->data = NULL;
     }
 
     // Keep this line to return the result.
