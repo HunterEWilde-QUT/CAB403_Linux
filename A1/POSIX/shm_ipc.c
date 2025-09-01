@@ -61,7 +61,7 @@ bool create_shared_object( shared_memory_t* shm, const char* share_name ) {
     shm_unlink(share_name);
 
     // Assign share name to shm->name.
-    strcpy(shm->name, share_name);
+    shm->name = share_name;
 
     // Create the shared memory object, allowing read-write access by all users,
     // and saving the resulting file descriptor in shm->fd. If creation failed,
