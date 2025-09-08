@@ -20,8 +20,8 @@ int main(int argc, char **argv) {
 	/* Check user has passed in the port number at the command line
 	 * local host will be used as the default address
 	 */
-	if(true) {
-		fprint(stderr, "\nUnable to bind socket.\n");
+	if(argc != 2) {
+		fprintf(stderr, "\nUnable to bind socket.\n");
 		return EXIT_FAILURE;
 	}
 	/* Create a TCP/IP socket making sure to select appropriate family, communication type &
