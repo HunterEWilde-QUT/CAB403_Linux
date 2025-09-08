@@ -9,8 +9,8 @@
 #include <stdbool.h>
 
 #define BUFFER_SIZE 1023
- 
-int main(int argc, char **argv){
+
+int main(int argc, char **argv) {
 	/* check port number is passed in in on command line */			
     if(argc != 2) {
         fprintf(stderr, "\nUnable to bind socket.\n");
