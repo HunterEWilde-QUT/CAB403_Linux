@@ -69,8 +69,6 @@ int main() {
         }
 
         insertNodeToReadyQueue(readyQueueProcess); /* Insert the ready process into the ready queue */
-        //free(readyQueueProcess); /* Deallocate memory */
-        //readyQueueProcess = NULL;
 
         jobQueueProcess->burstTime -= quantum; /* Decrement the job process's burst time by the time quantum */
 
