@@ -1,6 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <stdint.h>
 #include <pthread.h>
+#include <stdlib.h>
+#include <string.h>
 
 typedef struct {
     pthread_mutex_t mutex;           // Locked while accessing struct contents
@@ -17,3 +18,7 @@ typedef struct {
     uint8_t individual_service_mode; // 1 if in individual service mode, else 0
     uint8_t emergency_mode;          // 1 if in emergency mode, else 0
 } car_shared_mem;
+
+car_shared_mem carA;
+car_shared_mem carB;
+car_shared_mem carC;
