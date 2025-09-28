@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <pthread.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,6 +20,4 @@ typedef struct {
     uint8_t emergency_mode;          // 1 if in emergency mode, else 0
 } car_shared_mem;
 
-car_shared_mem carA;
-car_shared_mem carB;
-car_shared_mem carC;
+void car_init(const char *);
