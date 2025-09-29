@@ -3,6 +3,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include "internal.h"
+#include "status.h"
 
 const char *str_car = "car";
 const size_t shmem_size = sizeof(car_shared_mem);
@@ -40,7 +41,7 @@ int main(int argc, char *argv[]) {
 	/*Initialise car data*/
 	strcpy(car->data->current_floor, floor_min);
 	strcpy(car->data->destination_floor, floor_min);
-	strcpy(car->data->status, "Closed");
+	strcpy(car->data->status, str_closed);
 
     return EXIT_SUCCESS;
 }
