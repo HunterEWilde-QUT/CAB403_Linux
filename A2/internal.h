@@ -1,9 +1,11 @@
+#pragma once
 #include <stdint.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+/*Shared memory data structure*/
 typedef struct {
     pthread_mutex_t mutex;           // Locked while accessing struct contents
     pthread_cond_t cond;             // Signalled when the contents change
@@ -20,4 +22,9 @@ typedef struct {
     uint8_t emergency_mode;          // 1 if in emergency mode, else 0
 } car_shared_mem;
 
-void car_init(const char *);
+/*Shared memory control structure*/
+typedef struct {
+	char *name;    // Name of shared memory object
+	int fd;        // File descriptor
+	car_shared_mem *data;
+} car_shmem_ctrl;
