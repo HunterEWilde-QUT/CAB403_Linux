@@ -4,7 +4,7 @@
 #include <sys/stat.h>
 #include "internal.h"
 
-const char *car_ = "car";
+const char *str_car = "car";
 const size_t shmem_size = sizeof(car_shared_mem);
 
 void car_init(car_shmem_ctrl *, char *);
@@ -15,9 +15,12 @@ void car_init(car_shmem_ctrl *, char *);
 int main(int argc, char *argv[]) {
     /*Declare variables*/
     car_shmem_ctrl *car; // Shared memory control struct
-    char *name;          // Name of elevator car (e.g. "A")
-    char *floor_min;     // Lowest accessible floor (B99-999)
-    char *floor_max;     // Highest accessible floor (B99-999)
+    char *name;          // Name of elevator car (e.g. "A", "Service", "Test")
+    /**Range of accessible floors
+	 * Must be exactly 3 characters + '\0' ("B99"-"999")
+	 */
+	char floor_min[4];
+    char floor_max[4];
     int delay;           // Operation delay in milliseconds
 
     /*Get required input arguments*/
@@ -25,21 +28,26 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Usage: ./car {name} {lowest floor} {highest floor} {delay}");
         return EXIT_FAILURE;
     }
-    name = atoi(argv[1]);
-    floor_min = atoi(argv[2]);
-    floor_max = atoi(argv[3]);
+    strcpy(name, atoi(argv[1]));
+    strcpy(floor_min, atoi(argv[2]));
+    strcpy(floor_max, atoi(argv[3]));
     delay = atoi(argv[4]);
 
     /*Initialise car shared memory*/
     car = malloc(sizeof(car_shmem_ctrl)); // Memory must be allocated for this shared object
     car_init(car, &name);
 
+	/*Initialise car data*/
+	strcpy(car->data->current_floor, floor_min);
+	strcpy(car->data->destination_floor, floor_min);
+	strcpy(car->data->status, "Closed");
+
     return EXIT_SUCCESS;
 }
 
 void car_init(car_shmem_ctrl *car, char *name) {
     /*Assemble car name*/
-    strcpy(car->name, car_);
+    strcpy(car->name, str_car);
     strcat(car->name, name);
 
     /*Remove any previous instances*/
