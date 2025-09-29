@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 void car_init(car_shmem_ctrl *car, char *name) {
     /*Assemble car name*/
     strcpy(car->name, car_);
-    strcat(car-name, name);
+    strcat(car->name, name);
 
     /*Remove any previous instances*/
     shm_unlink(car->name);
@@ -65,15 +65,15 @@ void car_init(car_shmem_ctrl *car, char *name) {
 
     /*Configure mutex lock*/
     pthread_mutexattr_t mutex_attr; // Attribute object needed to initialise the mutex
-    pthread_mutexattr_init(&mutex_attr);
-    pthread_mutexattr_setpshared(&mutex_attr, PTHREAD_PROCESS_SHARED);
+    pthread_mutexattr_init(&mutex_attr); // Initialise mutex attribute
+    pthread_mutexattr_setpshared(&mutex_attr, PTHREAD_PROCESS_SHARED); // Enable pshared
 
-    pthread_mutex_init(&car->mutex, &mutex_attr);
+    pthread_mutex_init(&car->mutex, &mutex_attr); // Initialise mutex with pshared enabled
 
     /*Configure condition*/
-    pthread_condattr_t cond_attr;
-    pthread_condattr_init(&cond_attr);
-    //setpshared
+    pthread_condattr_t cond_attr; // Attribute object needed to initialise the condition
+    pthread_condattr_init(&cond_attr); // Initialise condition attribute
+    pthread_condattr_setpshared(&cond_attr, PTHREAD_PROCESS_SHARED); // Enable pshared
 
-    pthread_cond_int(&car->cond, &cond_attr);
+    pthread_cond_int(&car->cond, &cond_attr); // Initialise cond with pshared enabled
 }
