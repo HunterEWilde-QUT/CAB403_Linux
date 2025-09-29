@@ -11,13 +11,14 @@ const size_t shmem_size = sizeof(car_shared_mem);
 void car_init(car_shmem_ctrl *, char *);
 
 /**
- * Justify any MISRA-C violations
+ * Creates & initialises a car with a shared memory object.
  */
 int main(int argc, char *argv[]) {
     /*Declare variables*/
     car_shmem_ctrl *car; // Shared memory control struct
     char *name;          // Name of elevator car (e.g. "A", "Service", "Test")
-    /**Range of accessible floors
+    /**
+     * Range of accessible floors
 	 * Must be exactly 3 characters + '\0' ("B99"-"999")
 	 */
 	char floor_min[4];
@@ -38,7 +39,7 @@ int main(int argc, char *argv[]) {
     car = malloc(sizeof(car_shmem_ctrl)); // Memory must be allocated for this shared object
     car_init(car, &name);
 
-	/*Initialise car data*/
+	/*Initialise car data from input args*/
 	strcpy(car->data->current_floor, floor_min);
 	strcpy(car->data->destination_floor, floor_min);
 	strcpy(car->data->status, str_closed);
@@ -46,6 +47,11 @@ int main(int argc, char *argv[]) {
     return EXIT_SUCCESS;
 }
 
+/**
+ * Creates shared memory structure & initialises modes.
+ * @param car Shared mem control struct for a car; contains car data struct.
+ * @param name String to be appended to the designation "car" to form shared mem object name.
+ */
 void car_init(car_shmem_ctrl *car, char *name) {
     /*Assemble car name*/
     strcpy(car->name, str_car);
@@ -85,4 +91,14 @@ void car_init(car_shmem_ctrl *car, char *name) {
     pthread_condattr_setpshared(&cond_attr, PTHREAD_PROCESS_SHARED); // Enable pshared
 
     pthread_cond_int(&car->cond, &cond_attr); // Initialise cond with pshared enabled
+
+    /*Initialise boolean modes as false*/
+    car->data->open_button = 0;
+    car->data->close_button = 0;
+    car->data->safety_system = 0;
+    car->data->door_obstruction = 0;
+    car->data->overload = 0;
+    car->data->emergency_stop = 0;
+    car->data->individual_service_mode = 0;
+    car->data->emergency_mode = 0;
 }
