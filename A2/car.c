@@ -14,6 +14,12 @@ void car_init(car_shmem_ctrl *, char *);
  * Creates & initialises a car with a shared memory object.
  */
 int main(int argc, char *argv[]) {
+    /*Handle invalid usage*/
+    if (argc != 5) {
+        fprintf(stderr, "Usage: ./car {name} {lowest floor} {highest floor} {delay}");
+        return EXIT_FAILURE;
+    }
+
     /*Declare variables*/
     car_shmem_ctrl *car; // Shared memory control struct
     char *name;          // Name of elevator car (e.g. "A", "Service", "Test")
@@ -26,10 +32,6 @@ int main(int argc, char *argv[]) {
     int delay;           // Operation delay in milliseconds
 
     /*Get required input arguments*/
-    if (argc != 5) {
-        fprintf(stderr, "Usage: ./car {name} {lowest floor} {highest floor} {delay}");
-        return EXIT_FAILURE;
-    }
     strcpy(name, atoi(argv[1]));
     strcpy(floor_min, atoi(argv[2]));
     strcpy(floor_max, atoi(argv[3]));
