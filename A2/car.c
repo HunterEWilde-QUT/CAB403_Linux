@@ -32,9 +32,9 @@ int main(int argc, char *argv[]) {
     int delay;           // Operation delay in milliseconds
 
     /*Get required input arguments*/
-    strcpy(name, atoi(argv[1]));
-    strcpy(floor_min, atoi(argv[2]));
-    strcpy(floor_max, atoi(argv[3]));
+    strcpy(name, argv[1]);
+    strcpy(floor_min, argv[2]);
+    strcpy(floor_max, argv[3]);
     delay = atoi(argv[4]);
 
     /*Initialise car shared memory*/

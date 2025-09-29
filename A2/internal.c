@@ -12,8 +12,8 @@ int main(int argc, char *argv[]) {
     char *operation;
 
     /*Get required input arguments*/
-    strcpy(car_name, atoi(argv[1]));
-    strcpy(operation, atoi(argv[2]));
+    strcpy(car_name, argv[1]);
+    strcpy(operation, argv[2]);
 
     return EXIT_SUCCESS;
 }

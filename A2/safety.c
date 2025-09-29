@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
     char *car_name;
 
     /*Get required input arguments*/
-    strcpy(car_name, atoi(argv[1]));
+    strcpy(car_name, argv[1]);
 
     return EXIT_SUCCESS;
 }
