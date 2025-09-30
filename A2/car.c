@@ -4,7 +4,6 @@
 #include "internal.h"
 #include "status.h"
 
-const char *str_car = "car";
 const size_t shmem_size = sizeof(car_shared_mem);
 
 void car_init(car_shmem_ctrl *, char *);
