@@ -9,6 +9,7 @@ const char *str_car = "car";
 const size_t shmem_size = sizeof(car_shared_mem);
 
 void car_init(car_shmem_ctrl *, char *);
+void car_kill(car_shmem_ctrl *);
 
 /**
  * Creates & initialises a car with a shared memory object.
@@ -103,4 +104,21 @@ void car_init(car_shmem_ctrl *car, char *name) {
     car->data->emergency_stop = 0;
     car->data->individual_service_mode = 0;
     car->data->emergency_mode = 0;
+
+    /*Terminate program*/
+    if (0) { // Condition currently disabled.
+        car_kill(car);
+    }
+}
+
+/**
+ * Deletes shared memory structure.
+ * @param car Shared mem control structure to be deleted.
+ * PRE: `car` has been created using `car_init()`.
+ */
+void car_kill(car_shmem_ctrl *car) {
+    munmap(car->data, shmem_size);
+    shm_unlink(car->name);
+    car->fd = -1;
+    car->data = NULL;
 }
