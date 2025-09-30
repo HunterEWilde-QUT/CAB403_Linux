@@ -1,7 +1,6 @@
-#include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <sys/stat.h>
+
 #include "internal.h"
 #include "status.h"
 
@@ -47,6 +46,11 @@ int main(int argc, char *argv[]) {
 	strcpy(car->data->destination_floor, floor_min);
 	strcpy(car->data->status, str_closed);
 
+    /*Terminate program*/
+    if (0) { /*Condition currently disabled*/
+        car_kill(car);
+    }
+
     return EXIT_SUCCESS;
 }
 
@@ -64,7 +68,7 @@ void car_init(car_shmem_ctrl *car, char *name) {
     shm_unlink(car->name);
 
     /*Create a new instance of this shared memory object*/
-    car->fd = shm_open(object, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+    car->fd = shm_open(car->name, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
     if (car->fd == -1) {
         car->data = NULL;
         fprintf(stderr, "Unable to create shared memory object.");
@@ -75,7 +79,7 @@ void car_init(car_shmem_ctrl *car, char *name) {
         fprintf(stderr, "Unable to set capacity of shared memory object.");
         return;
     }
-    car->data = mmap(NULL, shmem_sizel, PROT_READ | PROT_WRITE, MAP_SHARED, car->fd, 0);
+    car->data = mmap(NULL, shmem_size, PROT_READ | PROT_WRITE, MAP_SHARED, car->fd, 0);
     if (car->data == MAP_FAILED) {
         fprintf(stderr, "Unable to map shared memory.");
         return;
@@ -104,11 +108,6 @@ void car_init(car_shmem_ctrl *car, char *name) {
     car->data->emergency_stop = 0;
     car->data->individual_service_mode = 0;
     car->data->emergency_mode = 0;
-
-    /*Terminate program*/
-    if (0) { // Condition currently disabled.
-        car_kill(car);
-    }
 }
 
 /**
