@@ -21,7 +21,8 @@ int main(int argc, char *argv[]) {
 
     regex_t valid_floor; // Declare a regular expression.
     regcomp(&valid_floor, "^B?[1-9][0-9]*$", 0); // Compile regex for testing floor name validity.
-    if (strlen(argv[1]) > 3 || regexec(&valid_floor, argv[1], 0, NULL, 0) != 0 || strlen(argv[2]) > 3 || regexec(&valid_floor, argv[2], 0, NULL, 0) != 0) {
+    if (strlen(argv[1]) > 3 || regexec(&valid_floor, argv[1], 0, NULL, 0) != 0 ||
+        strlen(argv[2]) > 3 || regexec(&valid_floor, argv[2], 0, NULL, 0) != 0) {
         fprintf(stderr, "Invalid floor(s) specified.");
         return EXIT_FAILURE;
     }
