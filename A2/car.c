@@ -5,29 +5,32 @@
 
 const size_t shmem_size = sizeof(car_shared_mem);
 
-void car_init(car_shmem_ctrl *, char *);
-void car_kill(car_shmem_ctrl *);
+void car_init(car_shmem_ctrl*, char*);
+void car_kill(car_shmem_ctrl*);
 
 /**
  * Creates & initialises a car with a shared memory object.
+ * Resets internal door controls.
  */
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
     /*Handle invalid usage*/
-    if (argc != 5) {
+    if (argc != 5)
+    {
         fprintf(stderr, "Usage: ./car {name} {lowest floor} {highest floor} {delay}");
         return EXIT_FAILURE;
     }
 
     /*Declare variables*/
-    car_shmem_ctrl *car; // Shared memory control struct
-    char *name;          // Name of elevator car (e.g. "A", "Service", "Test")
+    car_shmem_ctrl* car; // Shared memory control struct
+    char* name; // Name of elevator car (e.g. "A", "Service", "Test")
     /**
      * Range of accessible floors
 	 * Must be exactly 3 characters + '\0' ("B99"-"999")
 	 */
-	char floor_min[4];
+    char floor_min[4];
     char floor_max[4];
-    int delay;           // Operation delay in milliseconds
+    int delay; // Operation delay in milliseconds
 
     /*Get required input arguments*/
     strcpy(name, argv[1]);
@@ -39,14 +42,31 @@ int main(int argc, char *argv[]) {
     car = malloc(sizeof(car_shmem_ctrl)); // Memory must be allocated for this shared object
     car_init(car, &name);
 
-	/*Initialise car data from input args*/
-	strcpy(car->data->current_floor, floor_min);
-	strcpy(car->data->destination_floor, floor_min);
-	strcpy(car->data->status, str_closed);
+    /*Initialise car data from input args*/
+    strcpy(car->data->current_floor, floor_min);
+    strcpy(car->data->destination_floor, floor_min);
+    strcpy(car->data->status, str_closed);
 
-    /*Terminate program*/
-    if (0) { /*Condition currently disabled*/
-        car_kill(car);
+    /*Open connection to controller*/
+
+
+    /*Runtime loop*/
+    while (1)
+    {
+        if (car->data->open_button)
+        {
+            car->data->open_button = 0;
+        }
+        if (car->data->close_button)
+        {
+            car->data->close_button = 0;
+        }
+
+        /*Terminate program*/
+        if (0)
+        {
+            car_kill(car);
+        }
     }
 
     return EXIT_SUCCESS;
@@ -57,7 +77,8 @@ int main(int argc, char *argv[]) {
  * @param car Shared mem control struct for a car; contains car data struct.
  * @param name String to be appended to the designation "car" to form shared mem object name.
  */
-void car_init(car_shmem_ctrl *car, char *name) {
+void car_init(car_shmem_ctrl* car, char* name)
+{
     /*Assemble car name*/
     strcpy(car->name, str_car);
     strcat(car->name, name);
@@ -67,18 +88,21 @@ void car_init(car_shmem_ctrl *car, char *name) {
 
     /*Create a new instance of this shared memory object*/
     car->fd = shm_open(car->name, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-    if (car->fd == -1) {
+    if (car->fd == -1)
+    {
         car->data = NULL;
         fprintf(stderr, "Unable to create shared memory object.");
         return;
     }
-    if (ftruncate(car->fd, shmem_size) == -1) {
+    if (ftruncate(car->fd, shmem_size) == -1)
+    {
         car->data = NULL;
         fprintf(stderr, "Unable to set capacity of shared memory object.");
         return;
     }
     car->data = mmap(NULL, shmem_size, PROT_READ | PROT_WRITE, MAP_SHARED, car->fd, 0);
-    if (car->data == MAP_FAILED) {
+    if (car->data == MAP_FAILED)
+    {
         fprintf(stderr, "Unable to map shared memory.");
         return;
     }
@@ -113,7 +137,8 @@ void car_init(car_shmem_ctrl *car, char *name) {
  * @param car Shared mem control structure to be deleted.
  * PRE: `car` has been created using `car_init()`.
  */
-void car_kill(car_shmem_ctrl *car) {
+void car_kill(car_shmem_ctrl* car)
+{
     munmap(car->data, shmem_size);
     shm_unlink(car->name);
     car->fd = -1;
