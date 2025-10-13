@@ -1,5 +1,5 @@
 #include "internal.h"
-#include "status.h"
+#include "keywords.h"
 
 int main(int argc, char *argv[]) {
     /*Handle invalid usage*/

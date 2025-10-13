@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <netinet/in.h>
-#include <unistd.h>
 
 const int opt_enable = 1;
 const int buffer_size = 1023;

@@ -1,7 +1,7 @@
+#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <regex.h>
 
 /**
  * Summons a car to the specified source floor, & sets its destination, via the controller.
