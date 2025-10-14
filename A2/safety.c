@@ -2,11 +2,17 @@
 #include "internal.h"
 #include "keywords.h"
 
-int check_valid_floors(car_shared_mem*);
-int check_valid_status(char*);
-int check_valid_states(car_shared_mem*);
-int check_door_obstruction(car_shared_mem*);
+uint8_t check_data_inconsistency(car_shared_mem*);
 
+/*Use pointers for multithreading*/
+void* safety_ctrl(void*);
+
+/**
+ * Handles failsafe conditions for cars.
+ * @param argc Number of command line arguments: 1.
+ * @param argv car_name.
+ * @return Exit condition: success or failure.
+ */
 int main(int argc, char* argv[])
 {
     /*Handle invalid usage*/
@@ -18,6 +24,7 @@ int main(int argc, char* argv[])
 
     /*Declare variables*/
     car_shmem_ctrl* car;
+    pthread_t thread;
 
     /*Get name*/
     strcpy(car->name, str_car); // Initialise name of car object as "car"
@@ -40,100 +47,118 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    /*Handle conditions*/
-    if (car->data->safety_system != 1)
+    /*Start safety control thread*/
+    if (pthread_create(&thread, NULL, safety_ctrl, car) != 0)
     {
-        pthread_mutex_lock(&car->data->mutex); // Lock mem struct.
-
-        car->data->safety_system = 1;
-
-        pthread_cond_signal(&car->data->cond); // Signal contents changed.
-        pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct.
+        fprintf(stderr, "\nUnable to create safety thread for car %s.\n", car->name);
+        return EXIT_FAILURE;
     }
-    if (car->data->door_obstruction && car->data->status == str_closing)
-    {
-        /*Obstruction detected*/
-        pthread_mutex_lock(&car->data->mutex); // Lock mem struct.
 
-        strcpy(car->data->status, str_closing);
-
-        pthread_cond_signal(&car->data->cond); // Signal contents changed.
-        pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct.
-    }
-    if (car->data->emergency_stop && !car->data->emergency_mode)
-    {
-        fprintf(stderr, "\nThe emergency stop button has been pressed!\n");
-
-        pthread_mutex_lock(&car->data->mutex); // Lock mem struct.
-
-        car->data->emergency_mode = 1;
-        car->data->emergency_stop = 0;
-
-        pthread_cond_signal(&car->data->cond); // Signal contents changed.
-        pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct.
-    }
-    if (car->data->overload && !car->data->emergency_mode)
-    {
-        fprintf(stderr, "\nThe overload sensor has been tripped!\n");
-
-        pthread_mutex_lock(&car->data->mutex); // Lock mem struct.
-
-        car->data->emergency_mode = 1;
-
-        pthread_cond_signal(&car->data->cond); // Signal contents changed.
-        pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct.
-    }
-    if (!car->data->emergency_mode && (check_valid_floors(car->data)
-        || check_valid_status(car->data->status)
-        || check_valid_states(car->data)
-        || check_door_obstruction(car->data)))
-    {
-        fprintf(stderr, "\nData consistency error!\n");
-
-        pthread_mutex_lock(&car->data->mutex); // Lock mem struct.
-
-        car->data->emergency_mode = 1;
-
-        pthread_cond_signal(&car->data->cond); // Signal contents changed.
-        pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct.
-    }
+    /*Terminate thread*/
+    pthread_join(thread, NULL);
 
     return EXIT_SUCCESS;
 }
 
-int check_valid_floors(car_shared_mem* data)
+/**
+ * Checks for any data inconsistency in the shared memory structure of a car.
+ * @param data Shared mem data structure to be checked.
+ * @return True if there is at least one data inconsistency, false if there are none.
+ */
+uint8_t check_data_inconsistency(car_shared_mem* data)
 {
-    regex_t valid_floor; // Declare a regular expression.
-    regcomp(&valid_floor, "^B?[1-9][0-9]*$", 0); // Compile regex for testing floor name validity.
-    int valid = regexec(&valid_floor, car->data->current_floor, 0, NULL, 0) != 0
-        || regexec(&valid_floor, car->data->destination_floor, 0, NULL, 0) != 0;
-    regfree(&valid_floor); // Not needed hereafter.
+    /*Valid floors*/
+    regex_t valid_floor; // Declare a regular expression
+    regcomp(&valid_floor, "^B?[1-9][0-9]*$", 0); // Compile regex for testing floor name validity
 
-    return valid;
-}
+    uint8_t invalid_floors = regexec(&valid_floor, data->current_floor, 0, NULL, 0) != 0
+        || regexec(&valid_floor, data->destination_floor, 0, NULL, 0) != 0;
 
-int check_valid_status(char status[8])
-{
-    return status != str_open
-        && status != str_opening
-        && status != str_closed
-        && status != str_closing
-        && status != str_between;
-}
+    regfree(&valid_floor); // Not needed hereafter
 
-int check_valid_states(car_shared_mem* data)
-{
-    return data->open_button > 1
+    /*Valid status*/
+    uint8_t invalid_status = data->status != str_open
+        && data->status != str_opening
+        && data->status != str_closed
+        && data->status != str_closing
+        && data->status != str_between;
+
+    /*Valid states*/
+    uint8_t invalid_states = data->open_button > 1
         || data->close_button > 1
         || data->safety_system > 1
         || data->door_obstruction > 1
         || data->overload > 1
         || data->emergency_stop > 1
         || data->individual_service_mode > 1;
+
+    /*Door obstruction*/
+    uint8_t door_obstruction = data->door_obstruction
+        && (data->status != str_opening || data->status != str_closing);
+
+    return invalid_floors || invalid_status || invalid_states || door_obstruction;
 }
 
-int check_door_obstruction(car_shared_mem* data)
+/**
+ * Handle failsafe conditions.
+ * @param ptr Shared mem control structure to be checked & modified.
+ */
+void* safety_ctrl(void* ptr)
 {
-    return data->door_obstruction && (data->status != str_opening
-        || data->status != str_closing);
+    const car_shmem_ctrl* car = ptr;
+
+    pthread_mutex_lock(&car->data->mutex); // Lock mem struct
+
+    /*Sleep this thread & unlock mutex until safety system is triggered*/
+    while (car->data->safety_system
+        && !car->data->door_obstruction
+        && !car->data->emergency_stop
+        && !car->data->overload
+        && !check_data_inconsistency(car->data))
+    {
+        pthread_cond_wait(&car->data->cond, &car->data->mutex);
+    }
+
+    if (car->data->safety_system != 1)
+    {
+        car->data->safety_system = 1;
+
+        pthread_cond_signal(&car->data->cond); // Signal contents changed
+    }
+    if (car->data->door_obstruction && car->data->status == str_closing)
+    {
+        /*Obstruction detected*/
+        strcpy(car->data->status, str_opening);
+
+        pthread_cond_signal(&car->data->cond); // Signal contents changed
+    }
+    if (car->data->emergency_stop && !car->data->emergency_mode)
+    {
+        fprintf(stderr, "\nThe emergency stop button has been pressed!\n");
+
+        car->data->emergency_mode = 1;
+        car->data->emergency_stop = 0;
+
+        pthread_cond_signal(&car->data->cond); // Signal contents changed
+    }
+    if (car->data->overload && !car->data->emergency_mode)
+    {
+        fprintf(stderr, "\nThe overload sensor has been tripped!\n");
+
+        car->data->emergency_mode = 1;
+
+        pthread_cond_signal(&car->data->cond); // Signal contents changed
+    }
+    if (!car->data->emergency_mode && !check_data_inconsistency(car->data))
+    {
+        fprintf(stderr, "\nData consistency error!\n");
+
+        car->data->emergency_mode = 1;
+
+        pthread_cond_signal(&car->data->cond); // Signal contents changed
+    }
+
+    pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct
+
+    return NULL;
 }
