@@ -4,9 +4,14 @@
 #include "keywords.h"
 
 const size_t shmem_size = sizeof(car_shared_mem);
+int delay; // Operation delay in milliseconds
 
 void car_init(car_shmem_ctrl*, char*);
 void car_kill(car_shmem_ctrl*);
+
+/*Use pointers for multithreading*/
+void* connect_controller(void*);
+void* car_run(void*);
 
 /**
  * Creates & initialises a car with a shared memory object.
@@ -30,7 +35,8 @@ int main(int argc, char* argv[])
 	 */
     char floor_min[4];
     char floor_max[4];
-    int delay; // Operation delay in milliseconds
+    pthread_t tcp_thread;
+    pthread_t internal_thread;
 
     /*Get required input arguments*/
     strcpy(name, argv[1]);
@@ -47,27 +53,24 @@ int main(int argc, char* argv[])
     strcpy(car->data->destination_floor, floor_min);
     strcpy(car->data->status, str_closed);
 
-    /*Open connection to controller*/
-
-
-    /*Runtime loop*/
-    while (1)
+    /*Create threads*/
+    if (pthread_create(&tcp_thread, NULL, connect_controller, car) != 0)
     {
-        if (car->data->open_button)
-        {
-            car->data->open_button = 0;
-        }
-        if (car->data->close_button)
-        {
-            car->data->close_button = 0;
-        }
-
-        /*Terminate program*/
-        if (0)
-        {
-            car_kill(car);
-        }
+        fprintf(stderr, "\nUnable to create car TCP thread.\n");
+        return EXIT_FAILURE;
     }
+    if (pthread_create(&internal_thread, NULL, car_run, car) != 0)
+    {
+        fprintf(stderr, "\nUnable to create car internal thread.\n");
+        return EXIT_FAILURE;
+    }
+
+    /*Terminate threads*/
+    pthread_join(tcp_thread, NULL);
+    pthread_join(internal_thread, NULL);
+
+    /*Terminate shared mem structure*/
+    car_kill(car);
 
     return EXIT_SUCCESS;
 }
@@ -86,24 +89,27 @@ void car_init(car_shmem_ctrl* car, char* name)
     /*Remove any previous instances*/
     shm_unlink(car->name);
 
-    /*Create a new instance of this shared memory object*/
+    /**
+     * Create a new instance of this shared memory object.
+     * Macros copied from tutorial exercises.
+     */
     car->fd = shm_open(car->name, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
     if (car->fd == -1)
     {
         car->data = NULL;
-        fprintf(stderr, "Unable to create shared memory object.");
+        fprintf(stderr, "\nUnable to create shared memory object.\n");
         return;
     }
     if (ftruncate(car->fd, shmem_size) == -1)
     {
         car->data = NULL;
-        fprintf(stderr, "Unable to set capacity of shared memory object.");
+        fprintf(stderr, "\nUnable to set capacity of shared memory object.\n");
         return;
     }
     car->data = mmap(NULL, shmem_size, PROT_READ | PROT_WRITE, MAP_SHARED, car->fd, 0);
     if (car->data == MAP_FAILED)
     {
-        fprintf(stderr, "Unable to map shared memory.");
+        fprintf(stderr, "\nUnable to map shared memory.\n");
         return;
     }
 
@@ -143,4 +149,53 @@ void car_kill(car_shmem_ctrl* car)
     shm_unlink(car->name);
     car->fd = -1;
     car->data = NULL;
+}
+
+/**
+ * Opens TCP connection to controller.
+ * @param car Car to be registered by the controller.
+ */
+void* connect_controller(void* ptr)
+{
+    car_shmem_ctrl* car;
+    car = ptr;
+
+    /*Establish connection*/
+    while (1)
+    {
+        if (car->data->safety_system) // Only connect if safety system is operating.
+        {
+            // connect
+            break; // Connection successful; move on to handle comms.
+        }
+        fprintf(stderr, "\n%s failed to connect to controller server. Retrying in %d milliseconds...\n",
+            car->name, delay);
+        // wait {delay} ms
+    }
+    /*Send registration message to controller*/
+
+    signal(SIGPIPE, SIG_IGN); // Don't know what this does.
+
+    return NULL;
+}
+
+/**
+ * Resets modifications to shared mem structure by internal controls.
+ * @param car Shared mem control structure to be modified.
+ */
+void* car_run(void* ptr)
+{
+    car_shmem_ctrl* car;
+    car = ptr;
+
+    if (car->data->open_button)
+    {
+        car->data->open_button = 0;
+    }
+    if (car->data->close_button)
+    {
+        car->data->close_button = 0;
+    }
+
+    return NULL;
 }
