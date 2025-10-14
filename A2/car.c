@@ -153,12 +153,11 @@ void car_kill(car_shmem_ctrl* car)
 
 /**
  * Opens TCP connection to controller.
- * @param car Car to be registered by the controller.
+ * @param ptr Car to be registered by the controller.
  */
 void* connect_controller(void* ptr)
 {
-    car_shmem_ctrl* car;
-    car = ptr;
+    const car_shmem_ctrl* car = ptr;
 
     /*Establish connection*/
     while (1)
@@ -181,12 +180,11 @@ void* connect_controller(void* ptr)
 
 /**
  * Resets modifications to shared mem structure by internal controls.
- * @param car Shared mem control structure to be modified.
+ * @param ptr Shared mem control structure to be modified.
  */
 void* car_run(void* ptr)
 {
-    car_shmem_ctrl* car;
-    car = ptr;
+    const car_shmem_ctrl* car = ptr;
 
     if (car->data->open_button)
     {
