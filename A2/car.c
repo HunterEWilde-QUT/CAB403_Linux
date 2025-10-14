@@ -4,7 +4,7 @@
 #include "keywords.h"
 
 const size_t shmem_size = sizeof(car_shared_mem);
-uint16_t delay; // Operation delay in milliseconds.
+uint16_t delay; // Operation delay in milliseconds
 
 void car_init(car_shmem_ctrl*, char*);
 void car_kill(car_shmem_ctrl*);
@@ -15,7 +15,6 @@ void* car_run(void*);
 
 /**
  * Creates & initialises a car with a shared memory object.
- * Resets internal door controls.
  */
 int main(int argc, char* argv[])
 {
@@ -31,7 +30,7 @@ int main(int argc, char* argv[])
     char* name; // Name of elevator car (e.g. "A", "Service", "Test")
     /**
      * Range of accessible floors
-	 * Must be exactly 3 characters + '\0' ("B99"-"999")
+	 * Must be exactly 3 characters + '\0' ("B99"<->"999")
 	 */
     char floor_min[4];
     char floor_max[4];
@@ -162,10 +161,10 @@ void* connect_controller(void* ptr)
     /*Establish connection*/
     while (1)
     {
-        if (car->data->safety_system) // Only connect if safety system is operating.
+        if (car->data->safety_system) // Only connect if safety system is operating
         {
             // connect
-            break; // Connection successful; move on to handle comms.
+            break; // Connection successful; move on to handle comms
         }
         fprintf(stderr, "\n%s failed to connect to controller server. Retrying in %d milliseconds...\n",
             car->name, delay);
@@ -174,7 +173,7 @@ void* connect_controller(void* ptr)
 
     /*Send registration message to controller*/
 
-    signal(SIGPIPE, SIG_IGN); // Don't know what this does.
+    signal(SIGPIPE, SIG_IGN); // Don't know what this does
 
     return NULL;
 }
@@ -186,17 +185,27 @@ void* connect_controller(void* ptr)
 void* car_run(void* ptr)
 {
     const car_shmem_ctrl* car = ptr;
-    pthread_mutex_lock(&car->data->mutex); // Lock mem struct.
+
+    pthread_mutex_lock(&car->data->mutex); // Lock mem struct
+
+    /*Sleep this thread & unlock mutex until a button is pressed*/
+    while (!car->data->open_button && !car->data->close_button)
+    {
+        pthread_cond_wait(&car->data->cond, &car->data->mutex);
+    }
+
     if (car->data->open_button)
     {
         car->data->open_button = 0;
-        pthread_cond_signal(&car->data->cond); // Signal contents changed.
+        pthread_cond_signal(&car->data->cond); // Signal contents changed
     }
     if (car->data->close_button)
     {
         car->data->close_button = 0;
-        pthread_cond_signal(&car->data->cond); // Signal contents changed.
+        pthread_cond_signal(&car->data->cond); // Signal contents changed
     }
-    pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct.
+
+    pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct
+
     return NULL;
 }
