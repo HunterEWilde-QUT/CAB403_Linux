@@ -4,7 +4,7 @@
 #include "keywords.h"
 
 const size_t shmem_size = sizeof(car_shared_mem);
-int delay; // Operation delay in milliseconds
+uint16_t delay; // Operation delay in milliseconds.
 
 void car_init(car_shmem_ctrl*, char*);
 void car_kill(car_shmem_ctrl*);
@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 
     /*Initialise car shared memory*/
     car = malloc(sizeof(car_shmem_ctrl)); // Memory must be allocated for this shared object
-    car_init(car, &name);
+    car_init(car, name);
 
     /*Initialise car data from input args*/
     strcpy(car->data->current_floor, floor_min);
@@ -169,8 +169,9 @@ void* connect_controller(void* ptr)
         }
         fprintf(stderr, "\n%s failed to connect to controller server. Retrying in %d milliseconds...\n",
             car->name, delay);
-        // wait {delay} ms
+        sleep(delay / 1000); // Convert ms -> s.
     }
+
     /*Send registration message to controller*/
 
     signal(SIGPIPE, SIG_IGN); // Don't know what this does.
