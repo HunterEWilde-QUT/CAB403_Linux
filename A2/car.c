@@ -15,6 +15,9 @@ void* car_run(void*);
 
 /**
  * Creates & initialises a car with a shared memory object.
+ * @param argc Number of command line arguments: 1.
+ * @param argv name, lowest_floor, highest_floor, delay.
+ * @return Exit condition: success or failure.
  */
 int main(int argc, char* argv[])
 {
@@ -117,14 +120,14 @@ void car_init(car_shmem_ctrl* car, char* name)
     pthread_mutexattr_init(&mutex_attr); // Initialise mutex attribute
     pthread_mutexattr_setpshared(&mutex_attr, PTHREAD_PROCESS_SHARED); // Enable pshared
 
-    pthread_mutex_init(&car->mutex, &mutex_attr); // Initialise mutex with pshared enabled
+    pthread_mutex_init(&car->data->mutex, &mutex_attr); // Initialise mutex with pshared enabled
 
     /*Configure condition*/
     pthread_condattr_t cond_attr; // Attribute object needed to initialise the condition
     pthread_condattr_init(&cond_attr); // Initialise condition attribute
     pthread_condattr_setpshared(&cond_attr, PTHREAD_PROCESS_SHARED); // Enable pshared
 
-    pthread_cond_int(&car->cond, &cond_attr); // Initialise cond with pshared enabled
+    pthread_cond_init(&car->data->cond, &cond_attr); // Initialise cond with pshared enabled
 
     /*Initialise boolean modes as false*/
     car->data->open_button = 0;
@@ -144,6 +147,7 @@ void car_init(car_shmem_ctrl* car, char* name)
  */
 void car_kill(car_shmem_ctrl* car)
 {
+    pthread_mutex_destroy(&car->data->mutex);
     munmap(car->data, shmem_size);
     shm_unlink(car->name);
     car->fd = -1;
