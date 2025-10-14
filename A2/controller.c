@@ -31,7 +31,7 @@ int main(void)
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1)
     {
-        fprintf(stderr, "Unable to create socket.");
+        fprintf(stderr, "\nUnable to create socket.\n");
         return EXIT_FAILURE;
     }
 
@@ -47,14 +47,14 @@ int main(void)
     /*Bind socket*/
     if (bind(sockfd, (struct sockaddr*)&server_addr, socklen) == -1)
     {
-        fprintf(stderr, "Unable to bind socket.");
+        fprintf(stderr, "\nUnable to bind socket.\n");
         return EXIT_FAILURE;
     }
 
     /*Listen for incomming requests from cars or call pads*/
     if (listen(sockfd, 10) == -1)
     {
-        fprintf(stderr, "Unable to listen for clients.")
+        fprintf(stderr, "\nUnable to listen for clients.\n");
     }
 
     while (1)
@@ -63,7 +63,7 @@ int main(void)
         clientfd = accept(sockfd, &client_addr, &clientlen);
         if (clientfd == -1)
         {
-            fprintf(stderr, "Unable to accept client.");
+            fprintf(stderr, "\nUnable to accept client.\n");
             return EXIT_FAILURE;
         }
 
@@ -71,7 +71,7 @@ int main(void)
         bytesrcv = recv(clientfd, buffer, buffer_size, 0);
         if (bytesrcv == -1)
         {
-            fprintf(stderr, "Unable to receive client data.");
+            fprintf(stderr, "\nUnable to receive client data.\n");
         }
         buffer[bytesrcv] = '\0'; // Add null terminator.
 
@@ -80,7 +80,7 @@ int main(void)
 
     if (shutdown(clientfd, SHUT_RDWR) == -1)
     {
-        fprintf(stderr, "Unable to shut down client.");
+        fprintf(stderr, "\nUnable to shut down client.\n");
         return EXIT_FAILURE;
     }
 

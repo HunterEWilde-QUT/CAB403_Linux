@@ -11,14 +11,14 @@ int main(int argc, char* argv[])
     /*Handle invalid usage*/
     if (argc != 3)
     {
-        fprintf(stderr, "Usage: ./call {source floor} {destination floor}");
+        fprintf(stderr, "\nUsage: ./call {source floor} {destination floor}\n");
         return EXIT_FAILURE;
     }
 
     /*Handle floor name exceptions*/
     if (argv[1] == argv[2])
     {
-        fprintf(stderr, "You are already on that floor!");
+        fprintf(stderr, "\nYou are already on that floor!\n");
         return EXIT_FAILURE;
     }
 
@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
     if (strlen(argv[1]) > 3 || regexec(&valid_floor, argv[1], 0, NULL, 0) != 0 ||
         strlen(argv[2]) > 3 || regexec(&valid_floor, argv[2], 0, NULL, 0) != 0)
     {
-        fprintf(stderr, "Invalid floor(s) specified.");
+        fprintf(stderr, "\nInvalid floor(s) specified.\n");
         return EXIT_FAILURE;
     }
     regfree(&valid_floor); // Not needed hereafter.

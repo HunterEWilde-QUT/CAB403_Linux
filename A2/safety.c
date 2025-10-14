@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
     /*Handle invalid usage*/
     if (argc != 2)
     {
-        fprintf(stderr, "Usage: ./safety {car name}");
+        fprintf(stderr, "\nUsage: ./safety {car name}\n");
         return EXIT_FAILURE;
     }
 
@@ -23,17 +23,20 @@ int main(int argc, char* argv[])
     strcpy(car->name, str_car); // Initialise name of car object as "car"
     strcat(car->name, argv[1]); // Append car_name (e.g. "A") onto name of car object: "carA"
 
-    /*Get shared memory structure from name*/
+    /**
+     * Get shared memory structure from name.
+     * Macros copied from tutorial exercises.
+     */
     car->fd = shm_open(car->name, O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
     if (car->fd == -1)
     {
-        fprintf(stderr, "Unable to access car %s.", car->name);
+        fprintf(stderr, "Unable to access car %s.\n", car->name);
         return EXIT_FAILURE;
     }
     car->data = mmap(NULL, sizeof(car_shared_mem), PROT_READ | PROT_WRITE, MAP_SHARED, car->fd, 0);
     if (car->data == MAP_FAILED)
     {
-        fprintf(stderr, "Unable to map shared memory segment for car %s.", car->name);
+        fprintf(stderr, "\nUnable to map shared memory segment for car %s.\n", car->name);
         return EXIT_FAILURE;
     }
 
@@ -49,13 +52,13 @@ int main(int argc, char* argv[])
     }
     if (car->data->emergency_stop && !car->data->emergency_mode)
     {
-        fprintf(stderr, "The emergency stop button has been pressed!");
+        fprintf(stderr, "\nThe emergency stop button has been pressed!\n");
         car->data->emergency_mode = 1;
         car->data->emergency_stop = 0;
     }
     if (car->data->overload && !car->data->emergency_mode)
     {
-        fprintf(stderr, "The overload sensor has been tripped!");
+        fprintf(stderr, "\nThe overload sensor has been tripped!\n");
         car->data->emergency_mode = 1;
     }
     if (!car->data->emergency_mode && (check_valid_floors(car->data)
@@ -63,7 +66,7 @@ int main(int argc, char* argv[])
         || check_valid_states(car->data)
         || check_door_obstruction(car->data)))
     {
-        fprintf(stderr, "Data consistency error!");
+        fprintf(stderr, "\nData consistency error!\n");
         car->data->emergency_mode = 1;
     }
 

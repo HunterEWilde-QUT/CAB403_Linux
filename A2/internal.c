@@ -6,7 +6,7 @@ int main(int argc, char* argv[])
     /*Handle invalid usage*/
     if (argc != 3)
     {
-        fprintf(stderr, "Usage: ./internal {car name} {operation}");
+        fprintf(stderr, "\nUsage: ./internal {car name} {operation}\n");
         return EXIT_FAILURE;
     }
 
@@ -23,13 +23,13 @@ int main(int argc, char* argv[])
     car->fd = shm_open(car->name, O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
     if (car->fd == -1)
     {
-        fprintf(stderr, "Unable to access car %s.", car->name);
+        fprintf(stderr, "\nUnable to access car %s.\n", car->name);
         return EXIT_FAILURE;
     }
     car->data = mmap(NULL, sizeof(car_shared_mem), PROT_READ | PROT_WRITE, MAP_SHARED, car->fd, 0);
     if (car->data == MAP_FAILED)
     {
-        fprintf(stderr, "Unable to map shared memory segment for car %s.", car->name);
+        fprintf(stderr, "\nUnable to map shared memory segment for car %s.\n", car->name);
         return EXIT_FAILURE;
     }
 
@@ -60,17 +60,17 @@ int main(int argc, char* argv[])
         /*Check prerequisites to manual floor traversal*/
         if (car->data->individual_service_mode != 1)
         {
-            fprintf(stderr, "Operation only allowed in service mode.");
+            fprintf(stderr, "\nOperation only allowed in service mode.\n");
             return EXIT_FAILURE;
         }
         if (car->data->status == str_open || car->data->status == str_opening || car->data->status == str_closing)
         {
-            fprintf(stderr, "Operation not allowed while doors are open.");
+            fprintf(stderr, "\nOperation not allowed while doors are open.\n");
             return EXIT_FAILURE;
         }
         if (car->data->status == str_between)
         {
-            fprintf(stderr, "Operation not allowed while elevator is moving.");
+            fprintf(stderr, "\nOperation not allowed while elevator is moving.\n");
             return EXIT_FAILURE;
         }
 
@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
             }
             else if (next_lvl > 999)
             {
-                fprintf(stderr, "Car cannot rise above highest floor.");
+                fprintf(stderr, "\nCar cannot rise above highest floor.\n");
                 return EXIT_FAILURE;
             }
         }
@@ -143,7 +143,7 @@ int main(int argc, char* argv[])
             }
             else if (next_lvl > 99)
             {
-                fprintf(stderr, "Car cannot fall below lowest floor.");
+                fprintf(stderr, "\nCar cannot fall below lowest floor.\n");
                 return EXIT_FAILURE;
             }
         }
@@ -164,7 +164,7 @@ int main(int argc, char* argv[])
     }
     else
     {
-        fprintf(stderr, "Invalid operation.");
+        fprintf(stderr, "\nInvalid operation.\n");
         return EXIT_FAILURE;
     }
 
