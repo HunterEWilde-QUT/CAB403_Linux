@@ -167,7 +167,7 @@ void car_kill(car_shmem_ctrl* car)
 void* connect_controller(void* ptr)
 {
     const car_shmem_ctrl* car = ptr;
-    int fd = -1;
+    int fd;
     struct sockaddr_in server_addr;
 
     /*Initialise server data structure*/
@@ -183,7 +183,7 @@ void* connect_controller(void* ptr)
         {
             fd = socket(AF_INET, SOCK_STREAM, 0);
             if (fd != -1
-                && bind(fd, (struct sockaddr*)&server_addr, SOCKLEN) != -1)
+                && connect(fd, (struct sockaddr*)&server_addr, SOCKLEN) != -1)
             {
                 break; // Connection successful; move on to handle comms
             }
