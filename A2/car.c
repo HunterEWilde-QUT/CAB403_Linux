@@ -122,12 +122,16 @@ void car_init(car_shmem_ctrl* car, char* name)
 
     pthread_mutex_init(&car->data->mutex, &mutex_attr); // Initialise mutex with pshared enabled
 
+    pthread_mutexattr_destroy(&mutex_attr);
+
     /*Configure condition*/
     pthread_condattr_t cond_attr; // Attribute object needed to initialise the condition
     pthread_condattr_init(&cond_attr); // Initialise condition attribute
     pthread_condattr_setpshared(&cond_attr, PTHREAD_PROCESS_SHARED); // Enable pshared
 
     pthread_cond_init(&car->data->cond, &cond_attr); // Initialise cond with pshared enabled
+
+    pthread_condattr_destroy(&cond_attr);
 
     /*Initialise boolean modes as false*/
     car->data->open_button = 0;
@@ -172,7 +176,7 @@ void* connect_controller(void* ptr)
         }
         fprintf(stderr, "\n%s failed to connect to controller server. Retrying in %d milliseconds...\n",
             car->name, delay);
-        sleep(delay / 1000); // Convert ms -> s.
+        sleep(delay / 1000); // Convert ms -> s
     }
 
     /*Send registration message to controller*/
