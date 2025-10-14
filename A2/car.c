@@ -1,6 +1,8 @@
+#include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include "internal.h"
+#include "tcp.h"
 #include "keywords.h"
 
 const size_t shmem_size = sizeof(car_shared_mem);
@@ -165,14 +167,26 @@ void car_kill(car_shmem_ctrl* car)
 void* connect_controller(void* ptr)
 {
     const car_shmem_ctrl* car = ptr;
+    int fd = -1;
+    struct sockaddr_in server_addr;
+
+    /*Initialise server data structure*/
+    memset(&server_addr, '\0', SOCKLEN);
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    server_addr.sin_port = htons(PORT);
 
     /*Establish connection*/
     while (1)
     {
         if (car->data->safety_system) // Only connect if safety system is operating
         {
-            // connect
-            break; // Connection successful; move on to handle comms
+            fd = socket(AF_INET, SOCK_STREAM, 0);
+            if (fd != -1
+                && bind(fd, (struct sockaddr*)&server_addr, SOCKLEN) != -1)
+            {
+                break; // Connection successful; move on to handle comms
+            }
         }
         fprintf(stderr, "\n%s failed to connect to controller server. Retrying in %d milliseconds...\n",
             car->name, delay);
