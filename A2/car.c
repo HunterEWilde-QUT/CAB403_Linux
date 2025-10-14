@@ -185,15 +185,17 @@ void* connect_controller(void* ptr)
 void* car_run(void* ptr)
 {
     const car_shmem_ctrl* car = ptr;
-
+    pthread_mutex_lock(&car->data->mutex); // Lock mem struct.
     if (car->data->open_button)
     {
         car->data->open_button = 0;
+        pthread_cond_signal(&car->data->cond); // Signal contents changed.
     }
     if (car->data->close_button)
     {
         car->data->close_button = 0;
+        pthread_cond_signal(&car->data->cond); // Signal contents changed.
     }
-
+    pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct.
     return NULL;
 }

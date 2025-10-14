@@ -36,24 +36,49 @@ int main(int argc, char* argv[])
     /*Handle operations*/
     if (operation == "open")
     {
+        pthread_mutex_lock(&car->data->mutex); // Lock mem struct.
+
         car->data->open_button = 1;
+
+        pthread_cond_signal(&car->data->cond); // Signal contents changed.
+        pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct.
     }
     else if (operation == "close")
     {
+        pthread_mutex_lock(&car->data->mutex); // Lock mem struct.
+
         car->data->close_button = 1;
+
+        pthread_cond_signal(&car->data->cond); // Signal contents changed.
+        pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct.
     }
     else if (operation == "stop")
     {
+        pthread_mutex_lock(&car->data->mutex); // Lock mem struct.
+
         car->data->emergency_stop = 1;
+
+        pthread_cond_signal(&car->data->cond); // Signal contents changed.
+        pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct.
     }
     else if (operation == "service_on")
     {
+        pthread_mutex_lock(&car->data->mutex); // Lock mem struct.
+
         car->data->individual_service_mode = 1;
         car->data->emergency_mode = 0;
+
+        pthread_cond_signal(&car->data->cond); // Signal contents changed.
+        pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct.
     }
     else if (operation == "service_off")
     {
+        pthread_mutex_lock(&car->data->mutex); // Lock mem struct.
+
         car->data->individual_service_mode = 0;
+
+        pthread_cond_signal(&car->data->cond); // Signal contents changed.
+        pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct.
     }
     else if (operation == "up" || operation == "down")
     {
@@ -111,7 +136,12 @@ int main(int argc, char* argv[])
              */
             if (next_lvl == 0)
             {
+                pthread_mutex_lock(&car->data->mutex); // Lock mem struct.
+
                 strcpy(car->data->destination_floor, "1");
+
+                pthread_cond_signal(&car->data->cond); // Signal contents changed.
+                pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct.
             }
             else if (next_lvl > 999)
             {
@@ -139,7 +169,12 @@ int main(int argc, char* argv[])
              */
             if (next_lvl == 0)
             {
+                pthread_mutex_lock(&car->data->mutex); // Lock mem struct.
+
                 strcpy(car->data->destination_floor, "B1");
+
+                pthread_cond_signal(&car->data->cond); // Signal contents changed.
+                pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct.
             }
             else if (next_lvl > 99)
             {
@@ -154,12 +189,22 @@ int main(int argc, char* argv[])
 
         if (B)
         {
+            pthread_mutex_lock(&car->data->mutex); // Lock mem struct.
+
             strcpy(car->data->destination_floor, "B");
             strcat(car->data->destination_floor, next_floor);
+
+            pthread_cond_signal(&car->data->cond); // Signal contents changed.
+            pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct.
         }
         else
         {
+            pthread_mutex_lock(&car->data->mutex); // Lock mem struct.
+
             strcpy(car->data->destination_floor, next_floor);
+
+            pthread_cond_signal(&car->data->cond); // Signal contents changed.
+            pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct.
         }
     }
     else

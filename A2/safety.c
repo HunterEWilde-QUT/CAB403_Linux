@@ -41,25 +41,30 @@ int main(int argc, char* argv[])
     }
 
     /*Handle conditions*/
+    pthread_mutex_lock(&car->data->mutex); // Lock mem struct.
     if (car->data->safety_system != 1)
     {
         car->data->safety_system = 1;
+        pthread_cond_signal(&car->data->cond); // Signal contents changed.
     }
     if (car->data->door_obstruction && car->data->status == str_closing)
     {
         /*Obstruction detected*/
         strcpy(car->data->status, str_closing);
+        pthread_cond_signal(&car->data->cond); // Signal contents changed.
     }
     if (car->data->emergency_stop && !car->data->emergency_mode)
     {
         fprintf(stderr, "\nThe emergency stop button has been pressed!\n");
         car->data->emergency_mode = 1;
         car->data->emergency_stop = 0;
+        pthread_cond_signal(&car->data->cond); // Signal contents changed.
     }
     if (car->data->overload && !car->data->emergency_mode)
     {
         fprintf(stderr, "\nThe overload sensor has been tripped!\n");
         car->data->emergency_mode = 1;
+        pthread_cond_signal(&car->data->cond); // Signal contents changed.
     }
     if (!car->data->emergency_mode && (check_valid_floors(car->data)
         || check_valid_status(car->data->status)
@@ -68,7 +73,9 @@ int main(int argc, char* argv[])
     {
         fprintf(stderr, "\nData consistency error!\n");
         car->data->emergency_mode = 1;
+        pthread_cond_signal(&car->data->cond); // Signal contents changed.
     }
+    pthread_mutex_unlock(&car->data->mutex); // Unlock mem struct.
 
     return EXIT_SUCCESS;
 }
