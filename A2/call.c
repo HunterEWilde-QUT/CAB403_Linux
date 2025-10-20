@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "tcp.h"
 
 /**
  * Summons a car to the specified source floor, & sets its destination, via the controller.
@@ -42,6 +43,24 @@ int main(int argc, char* argv[])
     /*Get required input arguments*/
     strcpy(floor_src, argv[1]);
     strcpy(floor_dst, argv[2]);
+
+    /*Connect to controller*/
+    struct sockaddr_in server_addr;
+
+    memset(&server_addr, '\0', SOCKLEN);
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    server_addr.sin_port = htons(PORT);
+
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd == -1
+        || connect(fd, (struct sockaddr*)&server_addr, SOCKLEN) == -1)
+    {
+        fprintf(stderr, "\nCall pad unable to connect to controller server.\n");
+    }
+
+    /*Send request to controller*/
+
 
     return EXIT_SUCCESS;
 }
