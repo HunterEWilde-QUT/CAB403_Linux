@@ -7,6 +7,8 @@
 #include "controller.h"
 #include "tcp.h"
 
+car_register* car_head; // Global scope is needed to be accessible by multiple threads
+
 /**
  * Handles routing of cars requested by call pads.
  * Acts as a TCP server.
@@ -52,8 +54,7 @@ int main(void)
 	tcp_head->thread_created = 0;
 	tcp_head->next = NULL;
 
-	/*Initialise linked list for active car register*/
-	car_register* car_head;
+	/*Initialise linked list for active cars register*/
 	car_register_init(car_head);
 
 	/*Connect to clients (i.e. cars or call pads)*/
@@ -117,12 +118,15 @@ void car_register_init(car_register* node)
 }
 
 /**
- * Adds a new car register node to the linked list of active cars.
+ * Provides a usable node at the tail of the linked list of active cars.
+ * Creates & initialises a new node if needed.
  * @param node Node in the linked list.
  * @return Tail of linked list; usable node.
  */
 car_register* link_car_node(car_register* node)
 {
+	pthread_mutex_lock(&node->mutex);	// Lock mem struct
+
 	if (node->name == NULL) // This node hasn't been used yet
 	{
 		return node; // Use this node
@@ -132,13 +136,14 @@ car_register* link_car_node(car_register* node)
 		car_register* new;
 		car_register_init(new);
 
-		pthread_mutex_lock(&node->mutex);	// Lock mem struct
-		node->next = new;					// Link new node to the existing list
-		pthread_cond_signal(&node->cond);	// Signal contents changed
-		pthread_mutex_unlock(&node->mutex);	// Unlock mem struct
+		node->next = new; // Link new node to the existing list
 
 		return new; // Use the new node
 	}
+
+	//pthread_cond_signal(&node->cond);	// Signal contents changed
+	pthread_mutex_unlock(&node->mutex);	// Unlock mem struct
+
 	// This node is not the tail; must traverse linked list
 	return link_car_node(node->next);
 }
@@ -213,15 +218,17 @@ void* handle_connection(void* ptr)
 
 /**
  * Register a new car & handle 2-way communication.
+ * @param fd Client file descriptor.
+ * @param buffer Message string from client.
  */
 void connect_car(const int* fd, char* buffer)
 {
-	/*Get car properties*/
-	char* name = strtok(buffer, ' ');
-	char min_floor[4] = strtok(NULL, ' ');
-	char max_floor[4] = strtok(NULL, ' ');
+	/*Store car properties*/
+	car_register* car = link_car_node(car_head); // Acquire usable car register from linked list
 
-
+	strcpy(car->name, strtok(buffer, ' '));
+	strcpy(car->min_floor, strtok(NULL, ' '));
+	strcpy(car->max_floor, strtok(NULL, ' '));
 
 	/*Maintain communication with car*/
 	while (1)
@@ -232,7 +239,9 @@ void connect_car(const int* fd, char* buffer)
 		/*Handle car status update*/
 		if (strstr(buffer, "STATUS") != NULL)
 		{
-
+			strcpy(car->status, strtok(buffer, ' '));
+			strcpy(car->current_floor, strtok(buffer, ' '));
+			strcpy(car->destination_floor, strtok(buffer, ' '));
 		}
 
 		/*Terminate connection in case of service mode or emergency*/
@@ -245,11 +254,12 @@ void connect_car(const int* fd, char* buffer)
 			// 	fprintf(stderr, "\nUnable to shut down client.\n");
 			// 	return EXIT_FAILURE;
 			// }
-			close(*fd); // Close socket
 
 			break;
 		}
 	}
+
+	close(*fd); // Close socket
 }
 
 /**

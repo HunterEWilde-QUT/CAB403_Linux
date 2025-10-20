@@ -24,6 +24,9 @@ struct car_register_struct
     char* name;             // Car name
     char min_floor[4];      // Lowest accessible floor
     char max_floor[4];      // Highest accessible floor
+    char current_floor[4];
+    char destination_floor[4];
+    char status[8];
     car_register* next;
 };
 
