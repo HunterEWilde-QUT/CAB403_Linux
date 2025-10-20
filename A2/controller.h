@@ -16,17 +16,24 @@ struct tcp_thread_node_struct
 };
 
 /*Keep track of active cars*/
-typedef struct
+typedef struct car_register_struct car_register;
+struct car_register_struct
 {
 	pthread_mutex_t mutex;  // Locked while accessing struct contents
     pthread_cond_t cond;    // Signalled when the contents change
     char* name;             // Car name
     char min_floor[4];      // Lowest accessible floor
     char max_floor[4];      // Highest accessible floor
-} car_register;
+    car_register* next;
+};
+
+void car_register_init(car_register*);
+car_register* link_car_node(car_register*);
 
 pthread_t link_thread_node(tcp_thread_node*);
+
 char* get_client_data(const int*);
 void* handle_connection(void*);
+
 void connect_car(const int*, char*);
 void send_car(char*);

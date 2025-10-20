@@ -47,10 +47,14 @@ int main(void)
         fprintf(stderr, "\nUnable to listen for clients.\n");
     }
 
-	/*Initialise a linked list for car threads*/
-	tcp_thread_node* head;
-	head->thread_created = 0;
-	head->next = NULL;
+	/*Initialise linked list for car threads*/
+	tcp_thread_node* tcp_head;
+	tcp_head->thread_created = 0;
+	tcp_head->next = NULL;
+
+	/*Initialise linked list for active car register*/
+	car_register* car_head;
+	car_register_init(car_head);
 
 	/*Connect to clients (i.e. cars or call pads)*/
 	int clientfd;
@@ -68,7 +72,7 @@ int main(void)
         }
 
 		/*Create thread to handle request*/
-		pthread_t current_thread = link_thread_node(head);
+		pthread_t current_thread = link_thread_node(tcp_head);
 		if (pthread_create(&current_thread, NULL, handle_connection, &clientfd) != 0)
 		{
 			fprintf(stderr, "\nUnable to create controller thread.\n");
@@ -81,6 +85,62 @@ int main(void)
     }
 
     return EXIT_SUCCESS;
+}
+
+/**
+ * Initialise a new node in the linked list of active cars.
+ * @param node Pointer to a node in the linked list.
+ */
+void car_register_init(car_register* node)
+{
+	/*Configure mutex lock*/
+	pthread_mutexattr_t mutex_attr; // Attribute object needed to initialise the mutex
+	pthread_mutexattr_init(&mutex_attr); // Initialise mutex attribute
+	pthread_mutexattr_setpshared(&mutex_attr, PTHREAD_PROCESS_SHARED); // Enable pshared
+
+	pthread_mutex_init(&node->mutex, &mutex_attr); // Initialise mutex with pshared enabled
+
+	pthread_mutexattr_destroy(&mutex_attr);
+
+	/*Configure condition*/
+	pthread_condattr_t cond_attr; // Attribute object needed to initialise the condition
+	pthread_condattr_init(&cond_attr); // Initialise condition attribute
+	pthread_condattr_setpshared(&cond_attr, PTHREAD_PROCESS_SHARED); // Enable pshared
+
+	pthread_cond_init(&node->cond, &cond_attr); // Initialise cond with pshared enabled
+
+	pthread_condattr_destroy(&cond_attr);
+
+	/*Initialise linking properties*/
+	node->name = NULL; // Probably redundant, but explicitness doesn't hurt
+	node->next = NULL;
+}
+
+/**
+ * Adds a new car register node to the linked list of active cars.
+ * @param node Node in the linked list.
+ * @return Tail of linked list; usable node.
+ */
+car_register* link_car_node(car_register* node)
+{
+	if (node->name == NULL) // This node hasn't been used yet
+	{
+		return node; // Use this node
+	}
+	if (node->next == NULL) // This is the tail node; a new node is needed
+	{
+		car_register* new;
+		car_register_init(new);
+
+		pthread_mutex_lock(&node->mutex);	// Lock mem struct
+		node->next = new;					// Link new node to the existing list
+		pthread_cond_signal(&node->cond);	// Signal contents changed
+		pthread_mutex_unlock(&node->mutex);	// Unlock mem struct
+
+		return new; // Use the new node
+	}
+	// This node is not the tail; must traverse linked list
+	return link_car_node(node->next);
 }
 
 /**
@@ -160,6 +220,8 @@ void connect_car(const int* fd, char* buffer)
 	char* name = strtok(buffer, ' ');
 	char min_floor[4] = strtok(NULL, ' ');
 	char max_floor[4] = strtok(NULL, ' ');
+
+
 
 	/*Maintain communication with car*/
 	while (1)
