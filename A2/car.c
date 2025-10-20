@@ -58,6 +58,8 @@ int main(int argc, char* argv[])
     pthread_t tcp_thread;
     pthread_t internal_thread;
 
+    signal(SIGPIPE, SIG_IGN); // Handle interrupt signals to avoid crashing
+
     if (pthread_create(&tcp_thread, NULL, connect_controller, car) != 0)
     {
         fprintf(stderr, "\nUnable to create car TCP thread.\n");
@@ -195,7 +197,6 @@ void* connect_controller(void* ptr)
 
     /*Send registration message to controller*/
 
-    signal(SIGPIPE, SIG_IGN); // Don't know what this does
 
     return NULL;
 }
