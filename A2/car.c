@@ -216,12 +216,18 @@ void* car_run(void* ptr)
         pthread_cond_wait(&car->data->cond, &car->data->mutex);
     }
 
-    if (car->data->open_button)
+    if (car->data->open_button && car->data->close_button)
+    {
+        car->data->open_button = 0;
+        car->data->close_button = 0;
+        pthread_cond_signal(&car->data->cond); // Signal contents changed
+    }
+    else if (car->data->open_button)
     {
         car->data->open_button = 0;
         pthread_cond_signal(&car->data->cond); // Signal contents changed
     }
-    if (car->data->close_button)
+    else if (car->data->close_button)
     {
         car->data->close_button = 0;
         pthread_cond_signal(&car->data->cond); // Signal contents changed
