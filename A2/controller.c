@@ -4,28 +4,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include "controller.h"
 #include "tcp.h"
-
-const int opt_enable = 1;
-const int BUFFERLEN = 1023;
-
-/**
- * For creating linked list of threads for incoming TCP requests.
- * Facilitates tracking of all threads so that they may be joined neatly upon program completion.
- */
-typedef struct tcp_thread_node_struct tcp_thread_node;
-struct tcp_thread_node_struct
-{
-	pthread_t thread;		// Thread object to be created for handling client request (i.e. car or call pad)
-	uint8_t thread_created;	// Boolean to track if this thread has been created yet
-	tcp_thread_node* next;	// Pointer to next node in linked list
-};
-
-pthread_t link_thread_node(tcp_thread_node*);
-char* get_client_data(const int*);
-void* handle_connection(void*);
-void connect_car(const int*, char*);
-void send_car(char*);
 
 /**
  * Handles routing of cars requested by call pads.
@@ -51,7 +31,7 @@ int main(void)
     server_addr.sin_port = htons(PORT);
 
     /*Enable address reuse*/
-    setsocketopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt_enable, sizeof(opt_enable));
+    setsocketopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &OPT_ENABLE, sizeof(OPT_ENABLE));
 
     /*Bind socket*/
     if (bind(sockfd, (struct sockaddr*)&server_addr, SOCKLEN) == -1)
@@ -178,8 +158,8 @@ void connect_car(const int* fd, char* buffer)
 {
 	/*Get car properties*/
 	char* name = strtok(buffer, ' ');
-	char* min_floor = strtok(NULL, ' ');
-	char* max_floor = strtok(NULL, ' ');
+	char min_floor[4] = strtok(NULL, ' ');
+	char max_floor[4] = strtok(NULL, ' ');
 
 	/*Maintain communication with car*/
 	while (1)
