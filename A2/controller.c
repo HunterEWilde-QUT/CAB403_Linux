@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -5,7 +6,17 @@
 #include "tcp.h"
 
 const int opt_enable = 1;
-const int buffer_size = 1023;
+const int BUFFERLEN = 1023;
+
+typedef struct
+{
+	pthread_t thread;
+	tcp_thread_node* next;
+} tcp_thread_node;
+
+void* handle_connection(void*);	// Thread to handle incomming requests
+void connect_car(void);			// Car request logic
+void connect_call(void);		// Call pad request logic
 
 /**
  * Handles routing of cars requested by call pads.
@@ -17,11 +28,12 @@ int main(void)
     int sockfd; // Listening socket file descriptor
     int clientfd; // Client file descriptor
 
-    int bytesrcv; // Incoming bytes
-    char buffer[buffer_size]; // Receiving buffer
-
     struct sockaddr_in server_addr;
     struct sockaddr client_addr;
+
+	/*Create a linked list for car threads*/
+	tcp_thread_node* head;
+	car_thread->next = NULL;
 
     /*Initialise listening socket*/
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -53,7 +65,7 @@ int main(void)
         fprintf(stderr, "\nUnable to listen for clients.\n");
     }
 
-    while (1)
+	while (1)
     {
         /*Accept an incoming client request*/
         clientfd = accept(sockfd, &client_addr, &CLIENTLEN);
@@ -63,16 +75,22 @@ int main(void)
             return EXIT_FAILURE;
         }
 
-        /*Get client data*/
-        bytesrcv = recv(clientfd, buffer, buffer_size, 0);
-        if (bytesrcv == -1)
-        {
-            fprintf(stderr, "\nUnable to receive client data.\n");
-        }
-        buffer[bytesrcv] = '\0'; // Add null terminator.
+		/*Create thread to handle request*/
+		if (pthread_create(&node->thread, NULL, handle_connection, clientfd) != 0)
+		{
+			fprintf(stderr, "\nUnable to create controller thread.\n");
+			return EXIT_FAILURE;
+		}
 
-        close(clientfd); // Close socket.
+		//break;
     }
+
+	/*Terminate threads*/
+	//pthread_join(head->thread, NULL);
+	//if (head->next != NULL)
+	//{
+	//
+	//}
 
     if (shutdown(clientfd, SHUT_RDWR) == -1)
     {
@@ -83,4 +101,33 @@ int main(void)
     close(sockfd);
 
     return EXIT_SUCCESS;
+}
+
+void* handle_connection(void* ptr)
+{
+	const int* clientfd = ptr;
+	int bytesrcv; 			// Incoming bytes
+    char buffer[BUFFERLEN]; // Receiving buffer
+
+	/*Get client data*/
+    bytesrcv = recv(clientfd, buffer, BUFFERLEN, 0);
+    if (bytesrcv == -1)
+    {
+        fprintf(stderr, "\nUnable to receive client data.\n");
+    }
+    buffer[bytesrcv] = '\0'; // Add null terminator
+
+	/*Direct to relevant handler*/
+
+}
+
+void connect_car(void)
+{
+
+	close(clientfd); // Close socket
+}
+
+void connect_call(void)
+{
+
 }
