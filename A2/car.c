@@ -31,7 +31,6 @@ int main(int argc, char* argv[])
     }
 
     /*Declare variables*/
-    car_shmem_ctrl* car; // Shared memory control struct
     char* name; // Name of elevator car (e.g. "A", "Service", "Test")
     /**
      * Range of accessible floors
@@ -39,8 +38,6 @@ int main(int argc, char* argv[])
 	 */
     char floor_min[4];
     char floor_max[4];
-    pthread_t tcp_thread;
-    pthread_t internal_thread;
 
     /*Get required input arguments*/
     strcpy(name, argv[1]);
@@ -49,7 +46,7 @@ int main(int argc, char* argv[])
     delay = atoi(argv[4]);
 
     /*Initialise car shared memory*/
-    car = malloc(sizeof(car_shmem_ctrl)); // Memory must be allocated for this shared object
+    car_shmem_ctrl* car = malloc(sizeof(car_shmem_ctrl));
     car_init(car, name);
 
     /*Initialise car data from input args*/
@@ -58,6 +55,9 @@ int main(int argc, char* argv[])
     strcpy(car->data->status, str_closed);
 
     /*Create threads*/
+    pthread_t tcp_thread;
+    pthread_t internal_thread;
+
     if (pthread_create(&tcp_thread, NULL, connect_controller, car) != 0)
     {
         fprintf(stderr, "\nUnable to create car TCP thread.\n");
