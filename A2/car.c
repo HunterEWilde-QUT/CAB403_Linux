@@ -5,7 +5,7 @@
 #include "tcp.h"
 #include "keywords.h"
 
-const size_t shmem_size = sizeof(car_shared_mem);
+const size_t SHMEMLEN = sizeof(car_shared_mem); // Shared memory length
 uint16_t delay; // Operation delay in milliseconds
 
 void car_init(car_shmem_ctrl*, char*);
@@ -104,13 +104,13 @@ void car_init(car_shmem_ctrl* car, char* name)
         fprintf(stderr, "\nUnable to create shared memory object.\n");
         return;
     }
-    if (ftruncate(car->fd, shmem_size) == -1)
+    if (ftruncate(car->fd, SHMEMLEN) == -1)
     {
         car->data = NULL;
         fprintf(stderr, "\nUnable to set capacity of shared memory object.\n");
         return;
     }
-    car->data = mmap(NULL, shmem_size, PROT_READ | PROT_WRITE, MAP_SHARED, car->fd, 0);
+    car->data = mmap(NULL, SHMEMLEN, PROT_READ | PROT_WRITE, MAP_SHARED, car->fd, 0);
     if (car->data == MAP_FAILED)
     {
         fprintf(stderr, "\nUnable to map shared memory.\n");
@@ -154,7 +154,7 @@ void car_init(car_shmem_ctrl* car, char* name)
 void car_kill(car_shmem_ctrl* car)
 {
     pthread_mutex_destroy(&car->data->mutex);
-    munmap(car->data, shmem_size);
+    munmap(car->data, SHMEMLEN);
     shm_unlink(car->name);
     car->fd = -1;
     car->data = NULL;
