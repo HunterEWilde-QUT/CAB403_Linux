@@ -22,6 +22,7 @@ struct tcp_thread_node_struct
 };
 
 pthread_t link_thread_node(tcp_thread_node*);
+char* get_client_data(const int*);
 void* handle_connection(void*);
 void connect_car(const int*, char*);
 void send_car(char*);
@@ -32,22 +33,18 @@ void send_car(char*);
  */
 int main(void)
 {
-    /*Declare variables*/
-    int sockfd; // Listening socket file descriptor
-    int clientfd; // Client file descriptor
-
-    struct sockaddr_in server_addr;
-    struct sockaddr client_addr;
-
     /*Initialise listening socket*/
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1)
     {
         fprintf(stderr, "\nUnable to create socket.\n");
+
         return EXIT_FAILURE;
     }
 
     /*Initialise server data structure*/
+	struct sockaddr_in server_addr;
+
     memset(&server_addr, '\0', SOCKLEN);
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -60,6 +57,7 @@ int main(void)
     if (bind(sockfd, (struct sockaddr*)&server_addr, SOCKLEN) == -1)
     {
         fprintf(stderr, "\nUnable to bind socket.\n");
+
         return EXIT_FAILURE;
     }
 
@@ -74,6 +72,10 @@ int main(void)
 	head->thread_created = 0;
 	head->next = NULL;
 
+	/*Connect to clients (i.e. cars or call pads)*/
+	int clientfd;
+	struct sockaddr client_addr;
+
 	while (1)
     {
         /*Accept an incoming client request*/
@@ -81,14 +83,16 @@ int main(void)
         if (clientfd == -1)
         {
             fprintf(stderr, "\nUnable to accept client.\n");
+
             return EXIT_FAILURE;
         }
 
 		/*Create thread to handle request*/
 		pthread_t current_thread = link_thread_node(head);
-		if (pthread_create(&current_thread, NULL, handle_connection, clientfd) != 0)
+		if (pthread_create(&current_thread, NULL, handle_connection, &clientfd) != 0)
 		{
 			fprintf(stderr, "\nUnable to create controller thread.\n");
+
 			return EXIT_FAILURE;
 		}
 		pthread_detach(current_thread); // Allow thread to self-terminate when finished
@@ -109,6 +113,7 @@ pthread_t link_thread_node(tcp_thread_node* node)
 	if (!node->thread_created) // This node hasn't been used yet (only true for head node)
 	{
 		node->thread_created = 1;
+
 		return node->thread;
 	}
 	if (node->next == NULL) // This is the tail node; a new node is needed
@@ -117,10 +122,31 @@ pthread_t link_thread_node(tcp_thread_node* node)
 		node->next = new;		// Link this node to the new node
 		new->next = NULL;		// New node is the new tail
 		new->thread_created = 1;
+
 		return new->thread;
 	}
 	// This node is not the tail; must traverse linked list
 	return link_thread_node(node->next);
+}
+
+/**
+ * Receive data from a client.
+ * @param fd File descriptor of the client.
+ * @return Buffer containing the client's message.
+ */
+char* get_client_data(const int* fd)
+{
+	char buffer[BUFFERLEN]; // Receiving buffer
+
+	int bytesrcv = recv(fd, buffer, BUFFERLEN, 0);
+	if (bytesrcv == -1)
+	{
+		fprintf(stderr, "\nUnable to receive client data.\n");
+	}
+
+	buffer[bytesrcv] = '\0'; // Add null terminator
+
+	return buffer;
 }
 
 /**
@@ -129,22 +155,13 @@ pthread_t link_thread_node(tcp_thread_node* node)
  */
 void* handle_connection(void* ptr)
 {
-	const int* clientfd = ptr;
-	int bytesrcv; 			// Incoming bytes
-    char buffer[BUFFERLEN]; // Receiving buffer
-
-	/*Get client data*/
-    bytesrcv = recv(clientfd, buffer, BUFFERLEN, 0);
-    if (bytesrcv == -1)
-    {
-        fprintf(stderr, "\nUnable to receive client data.\n");
-    }
-    buffer[bytesrcv] = '\0'; // Add null terminator
+	const int* fd = ptr;
+    char* buffer = get_client_data(fd);
 
 	/*Direct to relevant handler*/
 	if (strstr(buffer, "CAR") != NULL) // A new car has been created
 	{
-		connect_car(clientfd, buffer);
+		connect_car(fd, buffer);
 	}
 	else if (strstr(buffer, "CALL") != NULL) // A call pad is summoning a car
 	{
@@ -157,22 +174,39 @@ void* handle_connection(void* ptr)
 /**
  * Register a new car & handle 2-way communication.
  */
-void connect_car(const int* clientfd, char* buffer)
+void connect_car(const int* fd, char* buffer)
 {
-	/*Add car to register*/
+	/*Get car properties*/
+	char* name = strtok(buffer, ' ');
+	char* min_floor = strtok(NULL, ' ');
+	char* max_floor = strtok(NULL, ' ');
 
-
-	/*Terminate connection in case of service mode or emergency*/
-	if (strstr(buffer, "INDIVIDUAL SERVICE") != NULL
-		|| strstr(buffer, "EMERGENCY") != NULL)
+	/*Maintain communication with car*/
+	while (1)
 	{
-		// Not sure if this is needed
-		// if (shutdown(clientfd, SHUT_RDWR) == -1)
-		// {
-		// 	fprintf(stderr, "\nUnable to shut down client.\n");
-		// 	return EXIT_FAILURE;
-		// }
-		close(*clientfd); // Close socket
+		/*Receive most recent message*/
+		buffer = get_client_data(fd);
+
+		/*Handle car status update*/
+		if (strstr(buffer, "STATUS") != NULL)
+		{
+
+		}
+
+		/*Terminate connection in case of service mode or emergency*/
+		if (strstr(buffer, "INDIVIDUAL SERVICE") != NULL
+			|| strstr(buffer, "EMERGENCY") != NULL)
+		{
+			// Not sure if this is needed
+			// if (shutdown(fd, SHUT_RDWR) == -1)
+			// {
+			// 	fprintf(stderr, "\nUnable to shut down client.\n");
+			// 	return EXIT_FAILURE;
+			// }
+			close(*fd); // Close socket
+
+			break;
+		}
 	}
 }
 
